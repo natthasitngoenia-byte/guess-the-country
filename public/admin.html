@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Guess the country Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit', 'sans-serif'] } } } }</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="text-slate-100 min-h-screen antialiased">
+
+  <header class="border-b border-slate-800 bg-slate-900/60">
+    <div class="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5">
+          <div class="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center"><i data-lucide="settings" class="w-4 h-4 text-indigo-400"></i></div>
+        </div>
+        <div>
+          <h1 class="text-base font-bold">หลังบ้าน</h1>
+          <p class="text-[11px] text-slate-400 -mt-0.5">Guess the country</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="/" class="px-3 py-2 rounded-xl text-xs text-slate-300 hover:bg-slate-800">ไปหน้าเว็บ</a>
+        <button id="btn-logout" class="hidden px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700">ออกจากระบบ</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 py-8 space-y-6">
+
+    <!-- Setup -->
+    <form id="view-setup" class="hidden max-w-sm mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+      <h2 class="text-lg font-bold">ตั้งรหัสผ่านผู้ดูแล</h2>
+      <p class="text-xs text-slate-400">ครั้งแรกเท่านั้น ใช้รหัสนี้เข้าหลังบ้านครั้งต่อไป</p>
+      <input id="setup-pw" type="password" class="field" placeholder="รหัสผ่าน (อย่างน้อย 8 ตัว)" autocomplete="new-password" required minlength="8">
+      <input id="setup-pw2" type="password" class="field" placeholder="ยืนยันรหัสผ่าน" autocomplete="new-password" required minlength="8">
+      <button class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold">ตั้งรหัสผ่าน</button>
+      <p class="form-msg text-xs text-rose-300 min-h-[1rem]"></p>
+    </form>
+
+    <!-- Setup blocked (remote, not configured) -->
+    <div id="view-blocked" class="hidden max-w-md mx-auto bg-slate-900 border border-amber-500/30 rounded-3xl p-6 space-y-2 text-sm">
+      <h2 class="text-lg font-bold text-amber-200">ยังไม่ได้ตั้งรหัสผ่านผู้ดูแล</h2>
+      <p class="text-slate-300">เพื่อความปลอดภัย ตั้งรหัสครั้งแรกได้จากเครื่องที่รันเซิร์ฟเวอร์ (เปิด <code class="text-indigo-300">http://localhost:PORT/admin</code>) หรือกำหนดค่า environment <code class="text-indigo-300">ADMIN_PASSWORD</code> บนโฮสต์</p>
+    </div>
+
+    <!-- Login -->
+    <form id="view-login" class="hidden max-w-sm mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+      <h2 class="text-lg font-bold">เข้าสู่ระบบหลังบ้าน</h2>
+      <input id="login-pw" type="password" class="field" placeholder="รหัสผ่าน" autocomplete="current-password" required>
+      <button class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold">เข้าสู่ระบบ</button>
+      <p class="form-msg text-xs text-rose-300 min-h-[1rem]"></p>
+    </form>
+
+    <!-- Dashboard -->
+    <div id="view-dash" class="hidden space-y-6">
+
+      <section class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-base font-bold flex items-center gap-2"><i data-lucide="key" class="w-4 h-4 text-amber-400"></i>Gemini API Key</h2>
+            <p class="text-xs text-slate-400 mt-1">เก็บไว้บนเซิร์ฟเวอร์เท่านั้น ผู้ใช้หน้าเว็บมองไม่เห็น ขอ Key ได้ที่ Google AI Studio</p>
+          </div>
+          <span id="key-status" class="shrink-0 text-xs px-2.5 py-1 rounded-full border"></span>
+        </div>
+        <form id="form-key" class="flex flex-col sm:flex-row gap-2">
+          <input id="key-input" type="password" class="field" placeholder="วาง API Key ใหม่ที่นี่" autocomplete="off">
+          <button class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold whitespace-nowrap">บันทึก Key</button>
+        </form>
+        <div class="flex flex-wrap gap-2">
+          <button id="btn-test" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs border border-slate-700 flex items-center gap-1.5"><i data-lucide="plug-zap" class="w-3.5 h-3.5"></i>ทดสอบการเชื่อมต่อ</button>
+          <button id="btn-clear-key" class="px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs border border-rose-500/20">ลบ Key</button>
+        </div>
+        <p id="key-msg" class="text-xs min-h-[1rem]"></p>
+      </section>
+
+      <section class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5">
+        <h2 class="text-base font-bold flex items-center gap-2"><i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-400"></i>การใช้งาน AI บนหน้าเว็บ</h2>
+
+        <label class="flex items-start justify-between gap-4 cursor-pointer">
+          <span>
+            <span class="text-sm font-medium block">เปิดใช้ AI วิเคราะห์ใบหน้า</span>
+            <span class="text-xs text-slate-400">หน้าเว็บใช้ Gemini บอกว่าใบหน้าคล้ายคนประเทศไหน ถ้าปิดไว้ ผู้ใช้จะวิเคราะห์ไม่ได้ ผู้ใช้ต้องกดยินยอมก่อนส่งภาพใบหน้า (ครอปแล้ว) ทุกครั้ง</span>
+          </span>
+          <input id="ai-enabled" type="checkbox" class="mt-1 w-5 h-5 accent-indigo-500 shrink-0">
+        </label>
+
+        <form id="form-settings" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label class="space-y-1 block">
+            <span class="text-xs text-slate-300">โมเดล</span>
+            <input id="model-input" class="field" placeholder="gemini-3.8-flash" required>
+          </label>
+          <label class="space-y-1 block">
+            <span class="text-xs text-slate-300">จำกัดจำนวนครั้งต่อวัน (คุมค่าใช้จ่าย)</span>
+            <input id="limit-input" type="number" min="0" max="100000" class="field" required>
+          </label>
+          <div class="sm:col-span-2 flex items-center justify-between">
+            <p class="text-xs text-slate-400">ใช้ไปวันนี้: <span id="usage-today" class="text-slate-200 font-medium">0</span> ครั้ง</p>
+            <button class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold">บันทึกการตั้งค่า</button>
+          </div>
+        </form>
+        <p id="settings-msg" class="text-xs min-h-[1rem]"></p>
+      </section>
+
+      <section id="section-password" class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+        <h2 class="text-base font-bold flex items-center gap-2"><i data-lucide="lock" class="w-4 h-4 text-emerald-400"></i>เปลี่ยนรหัสผ่าน</h2>
+        <form id="form-password" class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
+          <input id="pw-current" type="password" class="field" placeholder="รหัสผ่านเดิม" autocomplete="current-password" required>
+          <input id="pw-next" type="password" class="field" placeholder="รหัสผ่านใหม่ (8 ตัวขึ้นไป)" autocomplete="new-password" required minlength="8">
+          <button class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm border border-slate-700">เปลี่ยน</button>
+        </form>
+        <p id="password-msg" class="text-xs min-h-[1rem]"></p>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="/js/admin.js"></script>
+</body>
+</html>

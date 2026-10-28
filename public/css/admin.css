@@ -1,0 +1,4 @@
+body { font-family: 'Kanit', sans-serif; background: #020617; }
+.flag { font-family: 'Noto Color Emoji', 'Segoe UI Emoji', sans-serif; line-height: 1; }
+.field { width: 100%; padding: .7rem 1rem; border-radius: .75rem; background: #0f172a; border: 1px solid #334155; color: #f1f5f9; font-size: .875rem; }
+.field:focus { outline: none; border-color: #6366f1; }

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guess the country</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { fontFamily: { sans: ['Kanit', 'Prompt', 'sans-serif'] } } }
+    }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+
+  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="text-slate-100 min-h-screen antialiased flex flex-col selection:bg-indigo-500 selection:text-white">
+
+  <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl glow-bg"></div>
+    <div class="absolute top-1/2 -right-40 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl glow-bg" style="animation-delay: 2s;"></div>
+    <div class="absolute -bottom-40 left-1/3 w-96 h-96 bg-pink-600/15 rounded-full blur-3xl glow-bg" style="animation-delay: 1s;"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-lg shadow-indigo-500/20">
+          <div class="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
+            <i data-lucide="scan-face" class="w-5 h-5 text-indigo-400"></i>
+          </div>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">Guess the country</h1>
+          <p class="text-xs text-slate-400 font-light -mt-1 hidden sm:block">หน้าคุณคล้ายคนประเทศไหน</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8 w-full flex-grow flex flex-col">
+
+    <!-- Hero -->
+    <div class="text-center max-w-2xl mx-auto mb-6 space-y-2">
+      <div id="model-status" class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium mb-2">
+        <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
+        <span>กำลังโหลดโมเดล AI...</span>
+      </div>
+      <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight">
+        ใบหน้าของคุณ <span class="bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">คล้ายคนประเทศไหน?</span>
+      </h2>
+      <p class="text-sm sm:text-base text-slate-400 font-light">
+        อัปโหลดรูปหรือถ่ายจากกล้อง แล้วให้ AI ดูโครงหน้า ดวงตา และลุคโดยรวมว่าคล้ายคนประเทศไหนมากที่สุด
+      </p>
+    </div>
+
+    <!-- AI not configured notice -->
+    <div id="ai-off-notice" class="hidden w-full max-w-2xl mx-auto mb-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-200 text-sm flex items-center gap-3">
+      <i data-lucide="info" class="w-5 h-5 shrink-0"></i>
+      <p class="flex-1 text-xs sm:text-sm">ระบบ AI ยังไม่เปิดใช้งาน ผู้ดูแลต้องใส่ Gemini API Key และเปิดใช้ในหน้าหลังบ้านก่อน</p>
+    </div>
+
+    <!-- Input -->
+    <div id="section-input" class="w-full max-w-2xl mx-auto">
+      <div class="glass-panel rounded-3xl p-4 sm:p-6 shadow-2xl space-y-6">
+
+        <div class="flex p-1 bg-slate-900/80 rounded-2xl border border-slate-800/80">
+          <button id="tab-upload" class="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center justify-center space-x-2">
+            <i data-lucide="upload" class="w-4 h-4"></i><span>อัปโหลดรูปภาพ</span>
+          </button>
+          <button id="tab-webcam" class="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center justify-center space-x-2">
+            <i data-lucide="camera" class="w-4 h-4"></i><span>ถ่ายภาพจากกล้อง</span>
+          </button>
+        </div>
+
+        <div id="panel-upload">
+          <label id="drop-zone" class="border-2 border-dashed border-indigo-500/30 hover:border-indigo-500/60 bg-slate-900/40 hover:bg-slate-800/40 rounded-2xl p-8 sm:p-12 text-center transition-all cursor-pointer group flex flex-col items-center justify-center">
+            <input type="file" id="file-input" accept="image/*" class="sr-only">
+            <div class="w-16 h-16 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <i data-lucide="image-plus" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-base font-semibold text-slate-200 group-hover:text-indigo-300 transition-colors">ลากรูปมาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์</h3>
+            <p class="text-xs text-slate-400 mt-1">JPG, PNG, WEBP (ภาพหน้าตรง แสงพอ เห็นใบหน้าชัด)</p>
+          </label>
+        </div>
+
+        <div id="panel-webcam" class="hidden space-y-4">
+          <div class="relative rounded-2xl overflow-hidden bg-slate-950 aspect-[4/3] max-h-[380px] flex items-center justify-center border border-slate-800">
+            <video id="webcam-video" autoplay playsinline muted class="w-full h-full object-cover -scale-x-100"></video>
+            <div class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+              <div class="w-48 sm:w-56 h-64 sm:h-72 border-2 border-dashed border-indigo-400/80 rounded-[50%]"></div>
+              <p class="text-xs font-medium text-indigo-200 bg-slate-900/80 px-3 py-1 rounded-full mt-3 border border-indigo-500/30">วางใบหน้าให้อยู่ในกรอบวงรี</p>
+            </div>
+            <div id="webcam-error" class="hidden absolute inset-0 bg-slate-950/90 flex items-center justify-center p-6 text-center text-sm text-rose-300"></div>
+          </div>
+          <div class="flex justify-center">
+            <button id="btn-capture" class="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium text-sm shadow-lg shadow-indigo-500/25 flex items-center space-x-2 active:scale-95 transition-all">
+              <i data-lucide="aperture" class="w-4 h-4"></i><span>ถ่ายภาพ</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="panel-preview" class="hidden space-y-4">
+          <div class="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 max-h-[380px] flex items-center justify-center">
+            <img id="image-preview" src="" alt="ภาพที่เลือก" class="w-full max-h-[380px] object-contain">
+            <div id="scanning-overlay" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm hidden flex-col items-center justify-center z-20">
+              <div class="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#22d3ee] scan-laser"></div>
+              <div class="w-20 h-20 rounded-full border-2 border-cyan-500/50 border-t-cyan-400 animate-spin mb-4"></div>
+              <p id="scan-status-text" class="text-sm font-semibold text-cyan-300 px-4 text-center"></p>
+            </div>
+          </div>
+          <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800 cursor-pointer">
+            <input id="consent-check" type="checkbox" class="mt-0.5 w-4 h-4 accent-indigo-500 shrink-0">
+            <span class="text-xs text-slate-300 leading-relaxed">
+              <span class="font-medium text-slate-100">ยินยอมให้ AI วิเคราะห์ภาพนี้</span><br>
+              ภาพใบหน้าที่ครอปแล้วจะถูกส่งผ่านเซิร์ฟเวอร์ของเว็บนี้ไปยัง Google Gemini เพื่อวิเคราะห์ และไม่ถูกเก็บไว้ที่เซิร์ฟเวอร์ของเรา
+            </span>
+          </label>
+          <div class="flex items-center space-x-3">
+            <button id="btn-reset" class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs sm:text-sm border border-slate-700/50 flex items-center justify-center space-x-1.5">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i><span>เปลี่ยนรูป</span>
+            </button>
+            <button id="btn-analyze" class="flex-[2] py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-95 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-indigo-500/25 flex items-center justify-center space-x-2 active:scale-95 transition-all disabled:opacity-50">
+              <i data-lucide="sparkles" class="w-4 h-4"></i><span>วิเคราะห์ใบหน้า</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="section-results" class="hidden w-full max-w-4xl mx-auto space-y-6">
+
+      <!-- Solid backgrounds only inside the card so html2canvas exports it cleanly -->
+      <div id="exportable-card" class="rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 bg-slate-900 border border-slate-700/60">
+
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-lg bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+              <i data-lucide="award" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-slate-200">ผลการวิเคราะห์ใบหน้าโดย AI</h3>
+              <p class="text-[10px] text-slate-400" id="result-timestamp"></p>
+            </div>
+          </div>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-medium">Guess the country</span>
+        </div>
+
+        <!-- Top match -->
+        <div class="bg-gradient-to-r from-indigo-950 via-purple-950 to-slate-950 rounded-2xl p-6 border border-indigo-500/30 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <img id="result-photo" alt="ภาพใบหน้าที่วิเคราะห์" class="shrink-0 w-32 h-32 sm:w-36 sm:h-36 rounded-2xl object-cover border-2 border-indigo-400/50 shadow-lg shadow-indigo-500/20">
+          <div class="flex-1 space-y-3 text-center sm:text-left">
+            <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wider">คล้ายที่สุด</span>
+            <div class="flex items-center justify-center sm:justify-start space-x-3">
+              <span id="top-flag" class="flag text-4xl sm:text-5xl"></span>
+              <h2 id="top-country" class="text-3xl sm:text-4xl font-extrabold text-white"></h2>
+            </div>
+            <p id="ai-nickname" class="inline-block px-3 py-1 rounded-lg bg-indigo-500/15 text-indigo-200 text-sm font-medium border border-indigo-500/30"></p>
+            <p id="ai-description" class="text-xs sm:text-sm text-slate-300 font-light max-w-md leading-relaxed"></p>
+          </div>
+          <div class="shrink-0 flex flex-col items-center justify-center w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-slate-950 border-4 border-indigo-500">
+            <span id="top-percentage" class="text-3xl font-black text-indigo-200"></span>
+            <span class="text-[10px] text-slate-400 uppercase tracking-wider">สัดส่วน</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="rounded-2xl p-5 bg-slate-950/60 border border-slate-800 space-y-3">
+            <h4 class="text-xs font-bold text-slate-300 flex items-center space-x-2">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-indigo-400"></i><span>สัดส่วนความคล้ายรายประเทศ</span>
+            </h4>
+            <div class="relative w-full h-52"><canvas id="country-chart"></canvas></div>
+          </div>
+          <div class="rounded-2xl p-5 bg-slate-950/60 border border-slate-800 space-y-3">
+            <h4 class="text-xs font-bold text-slate-300 flex items-center space-x-2">
+              <i data-lucide="bar-chart-3" class="w-4 h-4 text-purple-400"></i><span>อันดับประเทศ</span>
+            </h4>
+            <div id="breakdown-bars" class="space-y-3 pt-1"></div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl p-5 bg-slate-950/60 border border-slate-800 space-y-4">
+          <h4 class="text-xs font-bold text-slate-300 flex items-center space-x-2">
+            <i data-lucide="scan" class="w-4 h-4 text-pink-400"></i><span>รายละเอียดจาก AI</span>
+          </h4>
+          <div id="ai-highlights" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+          <div id="details-grid" class="grid grid-cols-3 gap-3"></div>
+        </div>
+
+        <p class="text-center text-[10px] text-slate-500 font-light">
+          ประเมินโดย AI จากภาพถ่ายเพื่อความบันเทิง ไม่ได้บ่งบอกเชื้อชาติหรือสัญชาติจริง
+        </p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <button id="btn-download-card" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs sm:text-sm shadow-lg shadow-indigo-500/20 flex items-center justify-center space-x-2 transition-all active:scale-95">
+          <i data-lucide="download" class="w-4 h-4"></i><span>ดาวน์โหลดบัตรผล (PNG)</span>
+        </button>
+        <button id="btn-retry" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs sm:text-sm border border-slate-700/60 flex items-center justify-center space-x-2">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i><span>วิเคราะห์รูปใหม่</span>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="w-full glass-panel border-t border-slate-800/60 py-6 mt-12">
+    <div class="max-w-5xl mx-auto px-4 text-center space-y-2">
+      <div class="flex items-center justify-center space-x-2 text-xs text-slate-300">
+        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+        <span class="font-medium">ภาพของคุณไม่ถูกเก็บไว้</span>
+      </div>
+      <p class="text-[11px] text-slate-400 font-light max-w-2xl mx-auto leading-relaxed">
+        เบราว์เซอร์ตรวจหาและครอปใบหน้าก่อน แล้วส่งเฉพาะภาพใบหน้าที่ครอปแล้วผ่านเซิร์ฟเวอร์ของเว็บนี้ไปให้ Google Gemini วิเคราะห์ เมื่อคุณกดยินยอมเท่านั้น
+        เซิร์ฟเวอร์ของเราไม่บันทึกภาพ ผลลัพธ์เป็นการประเมินของ AI เพื่อความบันเทิง ไม่ได้บ่งบอกเชื้อชาติหรือสัญชาติ
+      </p>
+    </div>
+  </footer>
+
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] hidden max-w-[90vw] px-4 py-3 rounded-xl bg-slate-800 border border-slate-600 text-sm text-slate-100 shadow-2xl"></div>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

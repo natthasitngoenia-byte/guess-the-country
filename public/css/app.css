@@ -1,0 +1,26 @@
+body { font-family: 'Kanit', sans-serif; background: #020617; }
+.flag { font-family: 'Noto Color Emoji', 'Segoe UI Emoji', sans-serif; line-height: 1; }
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+@keyframes laserScan {
+  0% { top: 0%; opacity: 0.2; }
+  50% { top: 95%; opacity: 1; }
+  100% { top: 0%; opacity: 0.2; }
+}
+.scan-laser { animation: laserScan 2.2s ease-in-out infinite; }
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.03); }
+}
+.glow-bg { animation: pulseGlow 4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .scan-laser, .glow-bg, .animate-spin, .animate-pulse { animation: none !important; }
+}
