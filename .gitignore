@@ -1,0 +1,5 @@
+# data/config.json holds the admin password hash and the Gemini API key: never commit it.
+# data/references.json is the shared reference library and is meant to be deployed.
+data/*
+!data/references.json
+node_modules/
